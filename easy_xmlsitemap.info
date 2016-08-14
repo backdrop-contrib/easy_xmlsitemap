@@ -1,0 +1,8 @@
+name = Easy XML sitemap
+description = Provides sitemap file in XML format with multilingual attributes.
+package = SEO
+backdrop = 1.x
+type = module
+configure = admin/config/search/easy_xmlsitemap
+version = 1.0.1
+

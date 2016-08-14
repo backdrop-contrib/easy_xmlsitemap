@@ -1,0 +1,29 @@
+<?php
+/**
+ * @file
+ * Easy XML Sitemap install
+ */
+
+/**
+ * Implements hook_requirements().
+ */
+function easy_xmlsitemap_requirements($phase) {
+  // Ensure translations don't break during installation.
+  $t = get_t();
+  
+  $requirements = array();
+
+  if ($phase == 'install') {
+    if (file_exists('./sitemap.xml')) {
+      
+      $requirements['easy_xmlsitemap'] = array(
+        'severity' => REQUIREMENT_ERROR,
+        'description' => $t('The "Easy XML sitemap" module cannot display generated file "sitemap.xml",'
+            . ' because file with this name already exists in website root directory.'
+            . ' Please remove or rename an existing file, then try again.'),
+      );
+    }
+  }
+  
+  return $requirements;
+}

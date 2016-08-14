@@ -1,0 +1,453 @@
+<?php
+/**
+ * @file easy_xmlsitemap.module
+ */
+/**
+ * Implements hook_help().
+ * 
+ */
+function easy_xmlsitemap_help($path, $arg) {
+  if ($path == 'admin/help#easy_xmlsitemap') {
+    return t('Easy XML Sitemap module provides sitemap file in XML format with multilingual attributes.');
+  }
+}
+
+/**
+ * Implements hook_permission().
+ *
+ */
+function easy_xmlsitemap_permission() {
+  return array(
+    'administer easy_xmlsitemap settings' => array(
+      'title' => t('Administer Easy XML Sitemap settings')
+    ),
+  );
+}
+
+/**
+ * Implements hook_menu().
+ *
+ */
+function easy_xmlsitemap_menu() {
+  $items = array();
+
+  $items['admin/config/search/easy_xmlsitemap'] = array(
+    'type' => MENU_NORMAL_ITEM,
+    'title' => 'Easy XML Sitemap',
+    'page callback' => 'backdrop_get_form',
+    'page arguments' => array('easy_xmlsitemap_settings_form'),
+    'file' => 'easy_xmlsitemap.admin.inc',
+    'access callback' => 'user_access',
+    'access arguments' => array('administer easy_xmlsitemap settings'),
+  );
+  
+  $items['sitemap.xml'] = array(
+    'page callback' => 'easy_xmlsitemap_output',
+    'access callback' => TRUE,
+    'type' => MENU_CALLBACK,
+  );
+
+  return $items;
+}
+
+/**
+ * Implements hook_config_info().
+ */
+function easy_xmlsitemap_config_info() {
+  $prefixes['easy_xmlsitemap.settings'] = array(
+    'label' => t('Easy XML Sitemap'),
+    'group' => t('Configuration'),
+  );
+  
+  return $prefixes;
+}
+
+/**
+ * Main sitemap build function
+ * @return callback save to file
+ */
+function easy_xmlsitemap_build() {
+  
+  set_time_limit(1800);
+  
+  $config          = config('easy_xmlsitemap.settings');
+  $proto           = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? "https://" : "http://";
+  $host            = $_SERVER['HTTP_HOST']; 
+  $config_base_url = rtrim($config->get('base_url'), '/');
+  $base_url        = !empty($config_base_url) ? $config_base_url : $proto . $host;
+  
+  $excluded_raw_urls = $config->get('excluded_urls');
+  
+  $excluded_urls = easy_xmlsitemap_textarea_to_array($excluded_raw_urls);
+
+  $result = db_select('node', 'n')
+      ->fields('n', array('nid', 'type', 'langcode', 'uid', 'status', 'tnid'))
+      ->condition('status', 1)
+      ->execute();
+
+  $account = user_load(0);
+
+  // We work with enabled languages only
+  $site_langs = language_list(TRUE);
+  
+  $output = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n"
+      . "<urlset xmlns=\"http://www.sitemaps.org/schemas/sitemap/0.9\" xmlns:xhtml=\"http://www.w3.org/1999/xhtml\">";
+  
+  $urls_blok = array();
+  
+  foreach ($result as $node) {
+    if (node_access('view', $node, $account)) {
+      
+      // skip node if set as frontpage
+      $frontpage_nid = easy_xmlsitemap_get_frontpage_nid(); 
+      
+      if (!empty($frontpage_nid) && $node->nid == $frontpage_nid) {
+        continue;
+      }
+      
+      $url = url('node/' . $node->nid, array('absolute' => FALSE));
+      
+      // skip excluded URLs
+      if (easy_xmlsitemap_url_excluded($url, $excluded_urls)) {
+        continue;
+      }
+      //skip nodes with disabled languages but with "und" 
+      if ($node->langcode != 'und' && !array_key_exists($node->langcode, $site_langs)) {
+        continue;
+      }
+      
+      $urls_blok[$node->tnid][] = array(
+        'nid' => $node->nid,
+        'tnid' => $node->tnid,
+        'langcode' => $node->langcode,
+      );
+    }
+  }
+  
+  $output .= easy_xmlsitemap_build_front_url($base_url);
+
+  $output .= easy_xmlsitemap_build_node_items($base_url, $urls_blok);
+  
+  $output .= easy_xmlsitemap_build_taxonomy_items($base_url);
+
+  $output .= easy_xmlsitemap_build_views_items($base_url);
+  
+  $output .= "\n" . '</urlset>';
+  
+  return easy_xmlsitemap_file_save($output);
+}
+
+/**
+ * Check if given URL should be excluded from sitemap
+ * @param string $url (e.g. "/about.html" or "/node/123")
+ * @param array $excluded_urls
+ * @return boolean
+ */
+function easy_xmlsitemap_url_excluded($url, $excluded_urls) {
+  $excluded = FALSE;
+  if (!empty($excluded_urls)) {
+    if (in_array(substr($url, 1), $excluded_urls)) {
+      $excluded = TRUE;
+    }
+  }
+  return $excluded;
+}
+
+/**
+ * Return node nid if this node set as front page
+ * @return string or 0
+ */
+function easy_xmlsitemap_get_frontpage_nid() {
+  
+  $frontpage_nid = 0;
+  $site_frontpage = config_get('system.core', 'site_frontpage');
+
+  if (strpos($site_frontpage, 'node/')) {
+    $frontpage_nid = substr($site_frontpage, 5);
+  }
+  
+  return $frontpage_nid;
+}
+
+/**
+ * Find ans print front page(s) URL 
+ * @param string $base_url
+ * @return string
+ */
+function easy_xmlsitemap_build_front_url($base_url) {
+  $output = '';
+  
+  $site_langs = language_list(TRUE);
+
+  if (count($site_langs) == 1) {
+    $output .= easy_xmlsitemap_wrap_url($base_url . '/', key($site_langs));
+  }
+  else {
+    
+    foreach ($site_langs as $lang) {
+
+      $lang_suffix = $lang->default ? '/' : '/' . $lang->langcode . '/';
+      $url = $base_url . $lang_suffix;
+
+      $output .= "\n" . '  <url>' . "\n" .
+        '    <loc>' . $url . '</loc>';
+
+      foreach ($site_langs as $lang) {
+        $hlang_suffix = $lang->default ? '/' : '/' . $lang->langcode . '/';
+        $hurl = $base_url . $hlang_suffix;
+        
+        $output .= "\n" . 
+          '    <xhtml:link rel="alternate" hreflang="'. $lang->langcode . '" href="' . $hurl . '" />';
+      }
+      
+      $output .= "\n" . '  </url>';
+    }
+  }
+  
+  return $output;
+}
+
+/**
+ * Find ans print nodes URLs
+ * @global object $language
+ * @param string $base_url
+ * @param array $urls_blok
+ * @return string
+ */
+function easy_xmlsitemap_build_node_items($base_url, $urls_blok) {
+  
+  global $language;
+  
+  $output = '';
+  
+  foreach ($urls_blok as $tnid => $urls) {
+    
+    if ($tnid == '0') {
+      foreach ($urls as $node) {
+        
+        $url = $base_url . url('node/' . $node['nid'], array('absolute' => FALSE));
+        $langcode = $node['langcode'] != 'und' ? $node['langcode'] : $language->langcode;
+        $output .= easy_xmlsitemap_wrap_url($url, $langcode);
+      }
+    }
+    else {
+      foreach ($urls as $node) {
+        
+        $url = url('node/' . $node['nid'], array('absolute' => FALSE, 'language' => (object)array('langcode' => $node['langcode'])));
+        
+        $output .= "\n" . '  <url>' . "\n" .
+          '    <loc>' . $base_url . $url . '</loc>';
+        
+        foreach ($urls as $tnid) {
+          $hurl = url('node/' . $tnid['nid'], array('absolute' => FALSE, 'language' => (object)array('langcode' => $tnid['langcode'])));
+          $output .= "\n" 
+            . '    <xhtml:link rel="alternate" hreflang="'. $tnid['langcode'] . '" href="' . $base_url . $hurl . '" />';
+        }
+        $output .= "\n" . '  </url>';
+      }
+    }
+  }
+
+  return $output;
+}
+
+/**
+ * Find ans print non-empty taxonomy term pages
+ * @global object $language
+ * @param string $base_url
+ * @return string
+ */
+function easy_xmlsitemap_build_taxonomy_items($base_url) {
+  global $language;
+  
+  $output = '';
+
+  if (module_exists('taxonomy')) {
+    $result = db_select('taxonomy_term_data', 'ttd')
+      ->fields('ttd', array('tid'))
+      ->execute();
+    
+    foreach ($result as $term) {
+      // add term only if have nodes assigned to 
+      if (!empty(taxonomy_select_nodes($term->tid))) {
+      
+        $url = $base_url . url('taxonomy/term/' . $term->tid, array('absolute' => FALSE, 'language' => (object)array('langcode' => $language->langcode)));
+        $langcode = $language->langcode;
+
+        $output .= easy_xmlsitemap_wrap_url($url, $langcode);
+      }
+    }
+    return $output;
+  }
+}
+
+/**
+ * Find and print public available views pages URLs
+ * @global object $language
+ * @param string $base_url
+ * @return string
+ */
+function easy_xmlsitemap_build_views_items($base_url) {
+  global $language;
+
+  $output = '';
+  
+  $views = views_get_enabled_views();
+  foreach ($views as $view) {
+
+    if (empty($view->display)) {
+      // Skip this view as it is broken.
+      debug(t("Skipping broken view @view", array('@view' => $view->name)));
+      continue;
+    }
+    
+    foreach (array_keys($view->display) as $id) {
+      $plugin = views_fetch_plugin_data('display', $view->display[$id]->display_plugin);
+
+      if ($plugin['name'] == 'page') {
+        $view_name = $view->name;
+        $page_path = $view->display[$id]->display_options['path'];
+        // Skip admin views
+        if (strpos($page_path, 'admin/') === FALSE) {
+          
+          $url = $base_url . url('/' . $page_path, array('absolute' => FALSE, 'language' => (object)array('langcode' => $language->langcode)));
+          $langcode = $language->langcode;
+
+          $output .= easy_xmlsitemap_wrap_url($url, $langcode);
+        }
+      }           
+    }
+  }
+  
+  return $output;  
+}
+
+/**
+ * Wrap to tags a single URL
+ * @param string $full_url
+ * @param string $langcode
+ * @return string
+ */
+function easy_xmlsitemap_wrap_url($full_url, $langcode) {
+  
+  $output = "\n" . '  <url>' . "\n" .
+    '    <loc>' . $full_url . '</loc>';
+
+  $output .= "\n" 
+    . '    <xhtml:link rel="alternate" hreflang="'. $langcode . '" href="' . $full_url . '" />';
+  $output .= "\n" . '  </url>';
+  
+  return $output;
+}
+
+/**
+ * Save string to file
+ * @param string $content
+ * @return boolean 
+ */
+function easy_xmlsitemap_file_save($content) {
+  
+  if (empty($content)) {
+    return FALSE;
+  }
+    
+  $config    = config('easy_xmlsitemap.settings');
+  $file_dir  = 'public://' . $config->get('sitemap_dir');
+  $file_path = $file_dir . '/' . 'sitemap.xml';
+
+  
+  if (!file_exists($file_dir)) {
+    backdrop_mkdir($file_dir);
+  }
+  
+  // make backup previous file version
+  if (file_exists($file_path)) {
+    rename($file_path, $file_path . '.bak');
+  }
+
+  file_put_contents($file_path, $content);
+  
+  $success = file_exists($file_path);
+  
+  if ($success) {
+    $config->set('last_build_date', time());
+    $config->save();
+    watchdog('easy_xmlsitemap', 'Sitemap file saved.');
+    backdrop_set_message(t('File "sitemap.xml" has been saved successfully.'));
+  }
+  
+  return $success;
+}
+
+/**
+ * Output sitemap from file
+ * 
+ */
+function easy_xmlsitemap_output() {
+  
+  $config          = config('easy_xmlsitemap.settings');
+  $file_dir        = 'public://' . $config->get('sitemap_dir');
+  $file_path       = $file_dir . '/' . 'sitemap.xml';
+  $last_build_date = $config->get('last_build_date');  
+  
+  if (!file_exists($file_path) || !is_readable($file_path)) {
+    return backdrop_not_found();
+  }
+  
+  $file = file_get_contents($file_path);
+  
+  $ua = getenv('HTTP_USER_AGENT');
+  $ip = getenv('REMOTE_ADDR');
+  
+  watchdog('easy_xmlsitemap', 'Request for sitemap by ' . $ua . ' from ' . $ip, NULL, WATCHDOG_INFO);  
+  
+  backdrop_add_http_header('Content-type', 'text/xml; charset=utf-8');
+  backdrop_add_http_header('X-Robots-Tag', 'noindex, follow');
+  echo $file;
+  echo "\n" . '<!-- ' . format_date($last_build_date, 'short') . ' -->';
+    
+  exit();
+}
+
+/**
+ * Utility function
+ * @param string $raw_string
+ * @return array of strings from textarea
+ */
+function easy_xmlsitemap_textarea_to_array($raw_string = '') {
+
+  $array_of_strings = array();
+  
+  if (!empty($raw_string)) {
+    $raw_array = preg_split("/\\r\\n|\\r|\\n/", $raw_string);
+    
+    $array_of_strings = array_map('trim', $raw_array);
+  }
+  return $array_of_strings;
+}
+
+/**
+ * Implementation of hook_cron().
+*/
+function easy_xmlsitemap_cron() {
+  
+  $config            = config('easy_xmlsitemap.settings');
+  $last_build_date   = $config->get('last_build_date');  
+  $rebuild_frequency = $config->get('rebuild_frequency');
+  
+  if ($rebuild_frequency == 'manually') {
+    return;
+  }
+  
+  if ($rebuild_frequency == 'daily') {
+    $today = date("Y-m-d");
+    $day   = date("Y-m-d", $last_build_date);
+    
+    if ($day != $today) {
+      easy_xmlsitemap_build();
+    }
+  }
+  else {
+    easy_xmlsitemap_build();
+  }
+}
