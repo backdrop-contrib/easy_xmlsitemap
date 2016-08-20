@@ -268,9 +268,11 @@ function easy_xmlsitemap_build_taxonomy_items($base_url) {
       ->execute();
     
     foreach ($result as $term) {
-      // add term only if have nodes assigned to 
-      if (!empty(taxonomy_select_nodes($term->tid))) {
-      
+      // add term only if have nodes assigned to
+      $array_of_nodes = taxonomy_select_nodes($term->tid);
+
+      if (!empty($array_of_nodes)) {
+
         $url = $base_url . url('taxonomy/term/' . $term->tid, array('absolute' => FALSE, 'language' => (object)array('langcode' => $language->langcode)));
         $langcode = $language->langcode;
 
