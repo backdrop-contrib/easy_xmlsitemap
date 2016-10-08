@@ -1,29 +1,28 @@
 Easy XML sitemap
 ===================================
 
-Simple module for build a XML sitemap following to 
-[Google's recommendations](https://support.google.com/webmasters/answer/2620865) 
-for using "hreflang" attribute in sitemap of multilingual site.
+Generates XML sitemap conforming to [Google's recommendations](https://support.google.com/webmasters/answer/2620865) 
+for using "hreflang" attribute in sitemap on multilingual site and [sitemaps.org protocol](http://www.sitemaps.org/protocol.html).
 
 Features
 --------
-Sitemap file will be accessible on URL *http(s)://your.domain/sitemap.xml* 
-and automatically include URLs for: 
+Generated sitemap is available at *http(s)://your.domain/sitemap.xml* and include URLs for: 
 
-- pages created by nodes
-- non-empty taxonomy terms pages
-- public available pages by "Views" module
+- pages created by nodes;
+- non-empty taxonomy terms pages;
+- publicly available pages by "Views" module.
 
-If some node is set as site's front page, URL of this node will be 
+If one node is set as site's front page, direct URL to this node will be 
 automatically excluded from sitemap to avoid content duplication.
 
-For URLs which you do not want include to sitemap, exclusions may be added.
+URLs which you do not want include to sitemap may be excluded.
+
+Content which presented on any of available languages can be excluded from the sitemap.
 
 Each time sitemap re-built, backup copy of previous file state is saved as 
-public://easy_xmlsitemap/sitemap.xml.bak
+*public://easy_xmlsitemap/sitemap.xml.bak*
 
-Optional and less important URLs attributes "priority" and "lastmod" 
-are omitted in this version.
+Less important and optional URLs attributes "priority" and "lastmod" are omitted in this version.
 
 Installation
 ------------
@@ -39,23 +38,25 @@ Administration page is available via *Administration > Configuration >
 Search and metadata > Easy XML Sitemap* (admin/config/search/easy_xmlsitemap) 
 and may be useful for:
 
-- build XML sitemap by using button "BUILD SITEMAP NOW" (before first time build 
-you will get error 404 from "/sitemap.xml)
-- get information about last time sitemap build
+- anytime (re)build XML sitemap by using button "BUILD SITEMAP NOW";
+- view information when last time sitemap was generated.
 
-under "SETTINGS" fieldset:
-- set (if you need) different default base URL used for sitemap links
-- select sitemap rebuild frequency: manually, daily (default) or any cron run
-- add exclusions for URLs you won't include in sitemap (see description on the form).
+Under "Advanced settings" fieldset:
+- set (if you need) different default base URL used for sitemap links;
+- select sitemap rebuild frequency: manually, daily (default) or any cron run;
+- add exclusions for URLs you won't include in sitemap;
+- add exclusions for content of languages you won't include in sitemap.
 
 License
 -------
-
 This project is GPL v2 software. See the LICENSE.txt file in this directory for
 complete text.
 
 Current Maintainer
 ------------------
-
 Vladimir (https://github.com/findlabnet/)
 
+More information
+----------------
+For bug reports, feature or support requests, please use the module 
+issue queue at https://github.com/backdrop-contrib/easy_xmlsitemap/issues.
