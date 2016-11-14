@@ -3,7 +3,6 @@
   "base_url": "",
   "sitemap_dir": "easy_xmlsitemap",
   "rebuild_frequency": "daily",
-  "last_build_date": 0,
   "excluded_urls": "",
   "excluded_langs": []
 } 

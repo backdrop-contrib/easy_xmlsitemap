@@ -106,11 +106,11 @@ function easy_xmlsitemap_build() {
   $output = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n"
       . "<urlset xmlns=\"http://www.sitemaps.org/schemas/sitemap/0.9\" xmlns:xhtml=\"http://www.w3.org/1999/xhtml\">";
   
+  $frontpage_nid = easy_xmlsitemap_get_frontpage_nid(); 
+      
   foreach ($result as $node) {
     if (node_access('view', $node, $account)) {
       // skip node if set as frontpage
-      $frontpage_nid = easy_xmlsitemap_get_frontpage_nid(); 
-      
       if (!empty($frontpage_nid) && $node->nid == $frontpage_nid) {
         continue;
       }
@@ -358,8 +358,7 @@ function easy_xmlsitemap_file_save($content) {
   $success = file_exists($file_path);
   
   if ($success) {
-    $config->set('last_build_date', time());
-    $config->save();
+    state_set('easy_xmlsitemap_last_build_date', time());
     watchdog('easy_xmlsitemap', 'Sitemap file saved.');
     backdrop_set_message(t('File "sitemap.xml" has been saved successfully.'));
   }
@@ -374,7 +373,7 @@ function easy_xmlsitemap_output() {
   $config          = config('easy_xmlsitemap.settings');
   $file_dir        = 'public://' . $config->get('sitemap_dir');
   $file_path       = $file_dir . '/' . 'sitemap.xml';
-  $last_build_date = $config->get('last_build_date');  
+  $last_build_date = state_get('easy_xmlsitemap_last_build_date', 0);
   
   if (!file_exists($file_path) || !is_readable($file_path)) {
     return backdrop_not_found();
@@ -414,7 +413,7 @@ function easy_xmlsitemap_textarea_to_array($raw_string = '') {
 */
 function easy_xmlsitemap_cron() {
   $config            = config('easy_xmlsitemap.settings');
-  $last_build_date   = $config->get('last_build_date');  
+  $last_build_date   = state_get('easy_xmlsitemap_last_build_date', 0);  
   $rebuild_frequency = $config->get('rebuild_frequency');
   
   if ($rebuild_frequency == 'manually') {

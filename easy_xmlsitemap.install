@@ -36,3 +36,12 @@ function easy_xmlsitemap_update_1000() {
   $config->set('excluded_langs', array());
   $config->save();  
 }
+
+/**
+ *  Remove obsolete variable from config.
+ */
+function easy_xmlsitemap_update_1001() {
+  $config = config('easy_xmlsitemap.settings');
+  $config->clear('last_build_date');
+  $config->save();  
+}

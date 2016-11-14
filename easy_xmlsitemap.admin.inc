@@ -12,7 +12,7 @@
  */
 function easy_xmlsitemap_settings_form() {
   $config = config('easy_xmlsitemap.settings');
-  $last_build_date = $config->get('last_build_date');
+  $last_build_date = state_get('easy_xmlsitemap_last_build_date', 0);
   
   $info = $last_build_date != 0 
       ? t('Sitemap last build time: ') . format_date($last_build_date, 'short') 

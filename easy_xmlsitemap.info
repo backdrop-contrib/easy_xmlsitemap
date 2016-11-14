@@ -4,5 +4,5 @@ package = SEO
 backdrop = 1.x
 type = module
 configure = admin/config/search/easy_xmlsitemap
-version = 1.0.4
+version = 1.0.5
 
