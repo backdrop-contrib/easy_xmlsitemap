@@ -29,9 +29,16 @@ function easy_xmlsitemap_permission() {
  *
  */
 function easy_xmlsitemap_menu() {
+
+  $sub_path = 'search';
+  $backdrop_version = explode('.', BACKDROP_VERSION);
+  if ($backdrop_version[0] == 1 && $backdrop_version[1] > 5) {
+    $sub_path = 'metadata';
+  } 
+  
   $items = array();
 
-  $items['admin/config/search/easy_xmlsitemap'] = array(
+  $items['admin/config/' . $sub_path . '/easy_xmlsitemap'] = array(
     'type' => MENU_NORMAL_ITEM,
     'title' => 'Easy XML Sitemap',
     'page callback' => 'backdrop_get_form',

@@ -3,6 +3,6 @@ description = Provides sitemap file in XML format with multilingual attributes.
 package = SEO
 backdrop = 1.x
 type = module
-configure = admin/config/search/easy_xmlsitemap
-version = 1.0.5
+configure = admin/config/metadata/easy_xmlsitemap
+version = 1.0.6
 

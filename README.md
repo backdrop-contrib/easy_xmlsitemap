@@ -35,7 +35,7 @@ https://backdropcms.org/guide/modules
 Configuration and usage
 -----------------------
 Administration page is available via *Administration > Configuration > 
-Search and metadata > Easy XML Sitemap* (admin/config/search/easy_xmlsitemap) 
+Search and metadata > Easy XML Sitemap* (admin/config/metadata/easy_xmlsitemap) 
 and may be useful for:
 
 - anytime (re)build XML sitemap by using button "BUILD SITEMAP NOW";
