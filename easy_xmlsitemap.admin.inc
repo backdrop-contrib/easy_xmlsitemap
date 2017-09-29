@@ -48,7 +48,14 @@ function easy_xmlsitemap_settings_form() {
     '#title' => t('Advanced settings'),
     '#collapsible' => TRUE,
     '#collapsed' => TRUE,
-   );
+  );
+  
+  $form['settings']['force_https'] = array(
+    '#type' => 'checkbox',
+    '#title' => t('Force "https" protocol for URLs in sitemap.'),
+    '#default_value' => $config->get('force_https'),
+    '#description' => t('Can be used for generating links behind SSL-proxy like Cloudflare.'),
+  );
   
   $form['settings']['base_url'] = array(
     '#type' => 'textfield',
@@ -106,6 +113,7 @@ function easy_xmlsitemap_settings_form_submit($form, &$form_state) {
   $config = config('easy_xmlsitemap.settings');
   
   if ($form_state['clicked_button']['#id'] == 'edit-submit') {
+    $config->set('force_https',        $form_state['values']['force_https']);
     $config->set('base_url',           trim($form_state['values']['base_url']));
     $config->set('rebuild_frequency',  $form_state['values']['rebuild_frequency']);
     $config->set('excluded_urls',      trim($form_state['values']['excluded_urls']));

@@ -94,7 +94,8 @@ function easy_xmlsitemap_build() {
   set_time_limit(1800);
   
   $config            = config('easy_xmlsitemap.settings');
-  $proto             = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? "https://" : "http://";
+  $force_https       = $config->get('force_https');
+  $proto             = ((!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') || $force_https) ? "https://" : "http://";
   $host              = $_SERVER['HTTP_HOST']; 
   $config_base_url   = rtrim($config->get('base_url'), '/');
   $base_url          = !empty($config_base_url) ? $config_base_url : $proto . $host;
@@ -257,7 +258,7 @@ function easy_xmlsitemap_build_node_items($base_url, $urls_blok) {
 }
 
 /**
- * Find ans print non-empty taxonomy term pages
+ * Find and print non-empty taxonomy term pages
  * @global object $language
  * @param string $base_url
  * @return string

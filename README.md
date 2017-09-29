@@ -42,6 +42,7 @@ and may be useful for:
 - view information when last time sitemap was generated.
 
 Under "Advanced settings" fieldset:
+- set forced "https" protocol for URLs in sitemap;
 - set (if you need) different default base URL used for sitemap links;
 - select sitemap rebuild frequency: manually, daily (default) or any cron run;
 - add exclusions for URLs you won't include in sitemap;

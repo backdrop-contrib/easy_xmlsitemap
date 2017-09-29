@@ -45,3 +45,11 @@ function easy_xmlsitemap_update_1001() {
   $config->clear('last_build_date');
   $config->save();  
 }
+/**
+ *  Add and initialize new variable
+ */
+function easy_xmlsitemap_update_1002() {
+  $config = config('easy_xmlsitemap.settings');
+  $config->set('force_https', 0);
+  $config->save();  
+}
