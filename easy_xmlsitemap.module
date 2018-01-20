@@ -76,13 +76,14 @@ function easy_xmlsitemap_language_list() {
   $config         = config('easy_xmlsitemap.settings');
   $excluded_langs = $config->get('excluded_langs');
   $site_langs     = language_list(TRUE);  
-  
-  foreach ($excluded_langs as $lang => $excluded) {
-    if ($excluded !== 0) {
-      unset($site_langs[$lang]);
+
+  if (!empty($excluded_langs)) {
+    foreach ($excluded_langs as $lang => $excluded) {
+      if ($excluded !== 0) {
+        unset($site_langs[$lang]);
+      }
     }
   }
-
   return $site_langs;
 }
 
@@ -391,7 +392,7 @@ function easy_xmlsitemap_output() {
 /** DEBUG  
   $ua   = getenv('HTTP_USER_AGENT');
   $ip   = getenv('REMOTE_ADDR');
-  watchdog('easy_xmlsitemap', 'Request for sitemap by ' . $ua . ' from ' . $ip, NULL, WATCHDOG_INFO);  
+  watchdog('easy_xmlsitemap', 'Request for sitemap.xml by ' . $ua . ' from ' . $ip, NULL, WATCHDOG_INFO);  
 */  
   backdrop_add_http_header('Content-type', 'text/xml; charset=utf-8');
   backdrop_add_http_header('X-Robots-Tag', 'noindex, follow');

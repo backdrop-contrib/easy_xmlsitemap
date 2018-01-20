@@ -1,28 +1,33 @@
 Easy XML sitemap
 ===================================
 
-Generates XML sitemap conforming to [Google's recommendations](https://support.google.com/webmasters/answer/2620865) 
+Provides XML sitemap conforming to [Google's recommendations](https://support.google.com/webmasters/answer/2620865) 
 for using "hreflang" attribute in sitemap on multilingual site and [sitemaps.org protocol](http://www.sitemaps.org/protocol.html).
 
 Features
 --------
-Generated sitemap is available at *http(s)://your.domain/sitemap.xml* and include URLs for: 
+XML sitemap file is available at *http(s)://your.domain/sitemap.xml* and include URLs generated for: 
 
 - pages created by nodes;
 - non-empty taxonomy terms pages;
 - publicly available pages by "Views" module.
 
-If one node is set as site's front page, direct URL to this node will be 
+If some node is set as site's front page, direct URL to this node will be 
 automatically excluded from sitemap to avoid content duplication.
 
-URLs which you do not want include to sitemap may be excluded.
+You may exclude from sitemap:
 
-Content which presented on any of available languages can be excluded from the sitemap.
+- specific URLs, for example 403/404 error pages; 
+- all content which presented on any of available languages.
 
 Each time sitemap re-built, backup copy of previous file state is saved as 
 *public://easy_xmlsitemap/sitemap.xml.bak*
 
 Less important and optional URLs attributes "priority" and "lastmod" are omitted in this version.
+
+You can want add at end of your file robots.txt line:
+
+Sitemap: *http(s)://your.domain/sitemap.xml*
 
 Installation
 ------------

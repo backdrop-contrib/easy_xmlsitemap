@@ -111,14 +111,15 @@ function easy_xmlsitemap_settings_form() {
 function easy_xmlsitemap_settings_form_submit($form, &$form_state) {
   global $user;
   $config = config('easy_xmlsitemap.settings');
-  
+
   if ($form_state['clicked_button']['#id'] == 'edit-submit') {
     $config->set('force_https',        $form_state['values']['force_https']);
     $config->set('base_url',           trim($form_state['values']['base_url']));
     $config->set('rebuild_frequency',  $form_state['values']['rebuild_frequency']);
     $config->set('excluded_urls',      trim($form_state['values']['excluded_urls']));
-    $config->set('excluded_langs',     $form_state['values']['excluded_langs']);
-
+    if (isset($form_state['values']['excluded_langs'])) {  
+      $config->set('excluded_langs',   $form_state['values']['excluded_langs']);
+    }
     $config->save();
     watchdog('easy_xmlsitemap', t('Settings changed by @user.', array('@user' => $user->name)));
     backdrop_set_message(t('Configuration settings have been saved.'));
