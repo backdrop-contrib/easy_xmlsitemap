@@ -1,15 +1,18 @@
 <?php
 /**
- * @file easy_xmlsitemap.module
+ * @file main module file
  */
+
 /**
- * Implements hook_help().
- * 
+ * Implements hook_config_info().
  */
-function easy_xmlsitemap_help($path, $arg) {
-  if ($path == 'admin/help#easy_xmlsitemap') {
-    return t('Easy XML Sitemap module provides sitemap file in XML format with multilingual attributes.');
-  }
+function easy_xmlsitemap_config_info() {
+  $prefixes['easy_xmlsitemap.settings'] = array(
+    'label' => t('Easy XML Sitemap'),
+    'group' => t('Configuration'),
+  );
+  
+  return $prefixes;
 }
 
 /**
@@ -58,18 +61,6 @@ function easy_xmlsitemap_menu() {
 }
 
 /**
- * Implements hook_config_info().
- */
-function easy_xmlsitemap_config_info() {
-  $prefixes['easy_xmlsitemap.settings'] = array(
-    'label' => t('Easy XML Sitemap'),
-    'group' => t('Configuration'),
-  );
-  
-  return $prefixes;
-}
-
-/**
  *  Wrapper for core language_list(), just remove excluded languages
  */
 function easy_xmlsitemap_language_list() {
@@ -100,8 +91,6 @@ function easy_xmlsitemap_build() {
   $host              = $_SERVER['HTTP_HOST']; 
   $config_base_url   = rtrim($config->get('base_url'), '/');
   $base_url          = !empty($config_base_url) ? $config_base_url : $proto . $host;
-  $excluded_raw_urls = $config->get('excluded_urls');
-  $excluded_urls     = easy_xmlsitemap_textarea_to_array($excluded_raw_urls);
 
   $result = db_select('node', 'n')
       ->fields('n', array('nid', 'type', 'langcode', 'uid', 'status', 'tnid'))
@@ -127,7 +116,7 @@ function easy_xmlsitemap_build() {
       $url = url('node/' . $node->nid, array('absolute' => FALSE, 'language' => (object) array('langcode' => $node->langcode)));
 
       // skip excluded URLs
-      if (easy_xmlsitemap_url_excluded($url, $excluded_urls)) {
+      if (easy_xmlsitemap_url_excluded($url)) {
         continue;
       }
       
@@ -156,11 +145,14 @@ function easy_xmlsitemap_build() {
 /**
  * Check if given URL should be excluded from sitemap
  * @param string $url (e.g. "/about.html" or "/node/123")
- * @param array $excluded_urls
  * @return boolean
  */
-function easy_xmlsitemap_url_excluded($url, $excluded_urls) {
-  $excluded = FALSE;
+function easy_xmlsitemap_url_excluded($url) {
+  $config            = config('easy_xmlsitemap.settings');
+  $excluded_raw_urls = $config->get('excluded_urls');
+  $excluded_urls     = easy_xmlsitemap_textarea_to_array($excluded_raw_urls);
+  $excluded          = FALSE;
+  
   if (!empty($excluded_urls)) {
     if (in_array(substr($url, 1), $excluded_urls)) {
       $excluded = TRUE;
@@ -220,7 +212,7 @@ function easy_xmlsitemap_build_front_url($base_url) {
 }
 
 /**
- * Find ans print nodes URLs
+ * Find and print nodes URLs
  * @global object $language
  * @param string $base_url
  * @param array $urls_blok
@@ -279,8 +271,13 @@ function easy_xmlsitemap_build_taxonomy_items($base_url) {
       $array_of_nodes = taxonomy_select_nodes($term->tid);
 
       if (!empty($array_of_nodes)) {
-        $url = $base_url . url('taxonomy/term/' . $term->tid, array('absolute' => FALSE, 'language' => (object) array('langcode' => $langcode)));
-        $output .= easy_xmlsitemap_wrap_url($url, $langcode);
+        $url = url('taxonomy/term/' . $term->tid, array('absolute' => FALSE, 'language' => (object) array('langcode' => $langcode)));
+        // skip excluded URLs
+        if (easy_xmlsitemap_url_excluded($url)) {
+          continue;
+        }
+
+        $output .= easy_xmlsitemap_wrap_url($base_url . $url, $langcode);
       }
     }
     return $output;
@@ -314,8 +311,13 @@ function easy_xmlsitemap_build_views_items($base_url) {
         $page_path = $view->display[$id]->display_options['path'];
         // Skip admin views
         if (strpos($page_path, 'admin/') === FALSE) {
-          $url = $base_url . url('/' . $page_path, array('absolute' => FALSE, 'language' => (object) array('langcode' => $langcode)));
-          $output .= easy_xmlsitemap_wrap_url($url, $langcode);
+          $url = url('/' . $page_path, array('absolute' => FALSE, 'language' => (object) array('langcode' => $langcode)));
+          // skip excluded URLs
+          if (easy_xmlsitemap_url_excluded($url)) {
+            continue;
+          }
+          
+          $output .= easy_xmlsitemap_wrap_url($base_url . $url, $langcode);
         }
       }           
     }
