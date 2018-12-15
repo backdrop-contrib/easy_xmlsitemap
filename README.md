@@ -1,8 +1,8 @@
 Easy XML sitemap
-===================================
+================
 
 Provides XML sitemap conforming to [Google's recommendations](https://support.google.com/webmasters/answer/2620865) 
-for using "hreflang" attribute in sitemap on multilingual site and [sitemaps.org protocol](http://www.sitemaps.org/protocol.html).
+by using "hreflang" attribute in sitemap on multilingual site and [sitemaps.org protocol](http://www.sitemaps.org/protocol.html).
 
 Features
 --------
@@ -23,7 +23,7 @@ You may exclude from sitemap:
 Each time sitemap re-built, backup copy of previous file state is saved as 
 *public://easy_xmlsitemap/sitemap.xml.bak*
 
-Less important and optional URLs attributes "priority" and "lastmod" are omitted in this version.
+Less important and optional URLs attributes "priority" and "lastmod" are omitted.
 
 You can want add at end of your file robots.txt line:
 

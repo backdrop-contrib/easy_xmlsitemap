@@ -54,7 +54,7 @@ function easy_xmlsitemap_settings_form() {
     '#type' => 'checkbox',
     '#title' => t('Force "https" protocol for URLs in sitemap.'),
     '#default_value' => $config->get('force_https'),
-    '#description' => t('Can be used for generating links behind SSL-proxy like Cloudflare.'),
+    '#description' => t('Can be used for sites behind SSL-proxy like Cloudflare.'),
   );
   
   $form['settings']['base_url'] = array(
@@ -82,7 +82,9 @@ function easy_xmlsitemap_settings_form() {
     . '<br />403.html'
     . '<br />404.html'
     . '<br />node/123'
-    . '<br />some-test-page.html'
+    . '<br />' . t('Multiple similar URLs can be selected by using asterisk wildcard (*), for example:')
+    . '<br /><em>post-*</em>,'
+    . '<br />' . t('so all URLs starting with post- (such as post-123 or post-about-cat.html) will be excluded from sitemap.')
   );
   if (count($site_langs) > 1) {
     $form['settings']['excluded_langs'] = array(
