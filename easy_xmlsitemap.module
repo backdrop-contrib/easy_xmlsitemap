@@ -99,13 +99,12 @@ function easy_xmlsitemap_build() {
 
   $account    = user_load(0);
   $site_langs = easy_xmlsitemap_language_list();
-  $urls_blok  = array();
+  $urls_block  = array();
   
   $output = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n"
       . "<urlset xmlns=\"http://www.sitemaps.org/schemas/sitemap/0.9\" xmlns:xhtml=\"http://www.w3.org/1999/xhtml\">";
   
   $frontpage_nid = easy_xmlsitemap_get_frontpage_nid(); 
-      
   foreach ($result as $node) {
     if (node_access('view', $node, $account)) {
       // skip node if set as frontpage
@@ -125,16 +124,16 @@ function easy_xmlsitemap_build() {
         continue;
       }
       
-      $urls_blok[$node->tnid][] = array(
+      $urls_block[$node->tnid][] = array(
         'nid' => $node->nid,
         'tnid' => $node->tnid,
         'langcode' => $node->langcode,
       );
     }
   }
-  
+
   $output .= easy_xmlsitemap_build_front_url($base_url);
-  $output .= easy_xmlsitemap_build_node_items($base_url, $urls_blok);
+  $output .= easy_xmlsitemap_build_node_items($base_url, $urls_block);
   $output .= easy_xmlsitemap_build_taxonomy_items($base_url);
   $output .= easy_xmlsitemap_build_views_items($base_url);
   $output .= "\n" . '</urlset>';
@@ -157,35 +156,42 @@ function easy_xmlsitemap_url_excluded($url) {
   if (!empty($excluded_urls)) {
     // Check for url groups masked by *, then full url 
     foreach ($excluded_urls as $excluded_url) {
-      if (substr($excluded_url, -1) == '*') {
+      if (substr($excluded_url, -1) === '*') {
         $masked[] = substr($excluded_url, 0, -1);
       }
-    }
-    if (!empty($masked)) {
-      foreach ($masked as $found) {
-        $position = strpos($url, $found);
-        if ($position !== FALSE) {
-          $excluded = TRUE;
-        }
-        else {
-          $excluded = easy_xml_found($url, $excluded_urls);
+      if (!empty($masked)) {
+        foreach ($masked as $found) {
+          $position = strpos($url, $found);
+          if ($position !== FALSE) {
+            $excluded = TRUE;
+            continue 2;
+          }
+          else {
+            $excluded = easy_xml_found($url, $excluded_urls);
+          }
         }
       }
-    }
-    else {
-      $excluded = easy_xml_found($url, $excluded_urls);
+      else {
+        $excluded = easy_xml_found($url, $excluded_urls);
+      }
     }
   }
   return $excluded;
 }
+
 /**
- * Found in array
+ * Found in an array
  * @param string $url
  * @param array $excluded_urls
  * @return boolean
  */
 function easy_xml_found($url, $excluded_urls) {
-  return in_array(substr($url, 1), $excluded_urls);
+  $found = FALSE;
+  if (in_array(substr($url, 1), $excluded_urls)) {
+    $found = TRUE;
+  }
+
+  return $found; 
 }
 
 /**
@@ -196,7 +202,7 @@ function easy_xmlsitemap_get_frontpage_nid() {
   $frontpage_nid  = 0;
   $site_frontpage = config_get('system.core', 'site_frontpage');
 
-  if (strpos($site_frontpage, 'node/')) {
+  if (strpos($site_frontpage, 'node/') !== FALSE) {
     $frontpage_nid = substr($site_frontpage, 5);
   }
   
@@ -242,14 +248,14 @@ function easy_xmlsitemap_build_front_url($base_url) {
  * Find and print nodes URLs
  * @global object $language
  * @param string $base_url
- * @param array $urls_blok
+ * @param array $urls_block
  * @return string
  */
-function easy_xmlsitemap_build_node_items($base_url, $urls_blok) {
+function easy_xmlsitemap_build_node_items($base_url, $urls_block) {
   $default_langcode = config_get('system.core', 'language_default');
   $output = '';
 
-  foreach ($urls_blok as $tnid => $urls) {
+  foreach ($urls_block as $tnid => $urls) {
     if ($tnid == '0') {
       foreach ($urls as $node) {
         $url = $base_url . url('node/' . $node['nid'], array('absolute' => FALSE, 'language' => (object) array('langcode' => $node['langcode'])));
