@@ -1,8 +1,12 @@
 Easy XML sitemap
 ================
 
-Provides XML sitemap conforming to [Google's recommendations](https://support.google.com/webmasters/answer/2620865) 
-by using "hreflang" attribute in sitemap on multilingual site and [sitemaps.org protocol](http://www.sitemaps.org/protocol.html).
+Provides XML sitemap conforming to Google's recommendations and sitemaps.org protocol. 
+[Google's recommendations](https://support.google.com/webmasters/answer/2620865) 
+[sitemaps.org protocol](http://www.sitemaps.org/protocol.html)
+
+New in version 1.0.12 - integration with "SEO Meta Tags" module - exclude from sitemap 
+any page have "noindex" in meta-tag "robots". 
 
 Features
 --------
@@ -52,6 +56,8 @@ Under "Advanced settings" fieldset:
 - select sitemap rebuild frequency: manually, daily (default) or any cron run;
 - add exclusions for URLs you won't include in sitemap;
 - add exclusions for content of languages you won't include in sitemap.
+Note: if you have module "SEO Meta Tags" installed, you can exclude from sitemap 
+also all pages with "noindex" in meta-tag "robots".
 
 License
 -------

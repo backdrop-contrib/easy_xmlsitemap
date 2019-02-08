@@ -3,6 +3,11 @@
  * @file main module file
  */
 
+// Define same content entry types as in module "SEO Meta Tags" 
+define('SEO_META_TYPE_NODE',     2);
+define('SEO_META_TYPE_VIEW',     3);
+define('SEO_META_TYPE_TAXONOMY', 4);
+
 /**
  * Implements hook_config_info().
  */
@@ -115,7 +120,7 @@ function easy_xmlsitemap_build() {
       $url = url('node/' . $node->nid, array('absolute' => FALSE, 'language' => (object) array('langcode' => $node->langcode)));
 
       // skip excluded URLs
-      if (easy_xmlsitemap_url_excluded($url)) {
+      if (easy_xmlsitemap_seo_meta_check_robots(SEO_META_TYPE_NODE, $node->nid) || easy_xmlsitemap_url_excluded($url)) {
         continue;
       }
       
@@ -176,6 +181,7 @@ function easy_xmlsitemap_url_excluded($url) {
       }
     }
   }
+  
   return $excluded;
 }
 
@@ -306,7 +312,7 @@ function easy_xmlsitemap_build_taxonomy_items($base_url) {
       if (!empty($array_of_nodes)) {
         $url = url('taxonomy/term/' . $term->tid, array('absolute' => FALSE, 'language' => (object) array('langcode' => $langcode)));
         // skip excluded URLs
-        if (easy_xmlsitemap_url_excluded($url)) {
+        if (easy_xmlsitemap_seo_meta_check_robots(SEO_META_TYPE_TAXONOMY, $term->tid) || easy_xmlsitemap_url_excluded($url)) {
           continue;
         }
 
@@ -346,7 +352,7 @@ function easy_xmlsitemap_build_views_items($base_url) {
         if (strpos($page_path, 'admin/') === FALSE) {
           $url = url('/' . $page_path, array('absolute' => FALSE, 'language' => (object) array('langcode' => $langcode)));
           // skip excluded URLs
-          if (easy_xmlsitemap_url_excluded($url)) {
+          if (easy_xmlsitemap_seo_meta_check_robots(SEO_META_TYPE_VIEW, str_replace('-', '_', $view_name)) || easy_xmlsitemap_url_excluded($url)) {
             continue;
           }
           
@@ -470,5 +476,51 @@ function easy_xmlsitemap_cron() {
   }
   else {
     easy_xmlsitemap_build();
+  }
+}
+
+/**
+ * Check given page for meta-tag "robots"
+ * @param string $ce_type
+ * @param string $item_id
+ * @return boolean TRUE if found value "noindex"
+ */
+
+function easy_xmlsitemap_seo_meta_check_robots($ce_type, $item_id) {
+  if (!module_exists('seo_meta')) {
+    return FALSE;
+  }
+  else {
+    $seo_meta_integration = config_get('easy_xmlsitemap.settings', 'seo_meta_integration');
+    if ($seo_meta_integration == 1) {
+      $found = FALSE;
+
+      if ($ce_type == SEO_META_TYPE_TAXONOMY) {
+        $term = taxonomy_term_load($item_id);
+        $ce_id = $term->name;
+      }
+      else {
+        $ce_id = $item_id;
+      }
+      
+      $result = db_select('seo_meta', 'sm')
+          ->fields('sm', array(
+            'meta_robots',
+            )
+          )
+          ->condition('ce_type', $ce_type, '=')
+          ->condition('ce_id', $ce_id, '=')                
+          ->execute()
+          ->fetchAssoc();
+
+      if ($result) {
+        $meta_robots = unserialize($result['meta_robots']);
+        if ($meta_robots['NOINDEX'] !== 0) {
+          $found = TRUE;
+        }
+      }
+
+      return $found;
+    }
   }
 }
