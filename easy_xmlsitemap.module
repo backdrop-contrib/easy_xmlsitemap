@@ -97,48 +97,10 @@ function easy_xmlsitemap_build() {
   $config_base_url   = rtrim($config->get('base_url'), '/');
   $base_url          = !empty($config_base_url) ? $config_base_url : $proto . $host;
 
-  $result = db_select('node', 'n')
-      ->fields('n', array('nid', 'type', 'langcode', 'uid', 'status', 'tnid'))
-      ->condition('status', 1)
-      ->execute();
-
-  $account    = user_load(0);
-  $site_langs = easy_xmlsitemap_language_list();
-  $urls_block  = array();
-  
   $output = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n"
       . "<urlset xmlns=\"http://www.sitemaps.org/schemas/sitemap/0.9\" xmlns:xhtml=\"http://www.w3.org/1999/xhtml\">";
-  
-  $frontpage_nid = easy_xmlsitemap_get_frontpage_nid(); 
-  foreach ($result as $node) {
-    if (node_access('view', $node, $account)) {
-      // skip node if set as frontpage
-      if (!empty($frontpage_nid) && $node->nid == $frontpage_nid) {
-        continue;
-      }
-      
-      $url = url('node/' . $node->nid, array('absolute' => FALSE, 'language' => (object) array('langcode' => $node->langcode)));
-
-      // skip excluded URLs
-      if (easy_xmlsitemap_seo_meta_check_robots(SEO_META_TYPE_NODE, $node->nid) || easy_xmlsitemap_url_excluded($url)) {
-        continue;
-      }
-      
-      //skip nodes with disabled languages but with "und" 
-      if ($node->langcode != 'und' && !array_key_exists($node->langcode, $site_langs)) {
-        continue;
-      }
-      
-      $urls_block[$node->tnid][] = array(
-        'nid' => $node->nid,
-        'tnid' => $node->tnid,
-        'langcode' => $node->langcode,
-      );
-    }
-  }
-
   $output .= easy_xmlsitemap_build_front_url($base_url);
-  $output .= easy_xmlsitemap_build_node_items($base_url, $urls_block);
+  $output .= easy_xmlsitemap_build_node_items($base_url);
   $output .= easy_xmlsitemap_build_taxonomy_items($base_url);
   $output .= easy_xmlsitemap_build_views_items($base_url);
   $output .= "\n" . '</urlset>';
@@ -254,12 +216,47 @@ function easy_xmlsitemap_build_front_url($base_url) {
  * Find and print nodes URLs
  * @global object $language
  * @param string $base_url
- * @param array $urls_block
  * @return string
  */
-function easy_xmlsitemap_build_node_items($base_url, $urls_block) {
+function easy_xmlsitemap_build_node_items($base_url) {
   $default_langcode = config_get('system.core', 'language_default');
+  $site_langs = easy_xmlsitemap_language_list();
+  $urls_block  = array();
   $output = '';
+  
+  $frontpage_nid = easy_xmlsitemap_get_frontpage_nid(); 
+  
+  $result = db_select('node', 'n')
+    ->addTag('node_access') 
+    ->fields('n')
+    ->condition('status', 0, '>')
+    ->execute()
+    ->fetchAll();
+  
+  foreach ($result as $node) {
+    // skip node if set as frontpage
+    if (!empty($frontpage_nid) && $node->nid == $frontpage_nid) {
+      continue;
+    }
+
+    $url = url('node/' . $node->nid, array('absolute' => FALSE, 'language' => (object) array('langcode' => $node->langcode)));
+
+    // skip excluded URLs
+    if (easy_xmlsitemap_seo_meta_check_robots(SEO_META_TYPE_NODE, $node->nid) || easy_xmlsitemap_url_excluded($url)) {
+      continue;
+    }
+
+    //skip nodes with disabled languages but with "und" 
+    if ($node->langcode != 'und' && !array_key_exists($node->langcode, $site_langs)) {
+      continue;
+    }
+
+    $urls_block[$node->tnid][] = array(
+      'nid' => $node->nid,
+      'tnid' => $node->tnid,
+      'langcode' => $node->langcode,
+    );
+  }
 
   foreach ($urls_block as $tnid => $urls) {
     if ($tnid == '0') {
