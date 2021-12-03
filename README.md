@@ -1,9 +1,11 @@
 Easy XML sitemap
 ================
 
-Provides XML sitemap conforming to Google's recommendations and sitemaps.org protocol. 
-[Google's recommendations](https://support.google.com/webmasters/answer/2620865) 
-[sitemaps.org protocol](http://www.sitemaps.org/protocol.html)
+Provides XML sitemap conforming to Google's recommendations and sitemaps.org protocol.  
+
+[Google's recommendations](https://support.google.com/webmasters/answer/2620865)  
+
+[sitemaps.org protocol](http://www.sitemaps.org/protocol.html)  
 
 New in version 1.0.12 - integration with "SEO Meta Tags" module - exclude from sitemap 
 any page have "noindex" in meta-tag "robots". 

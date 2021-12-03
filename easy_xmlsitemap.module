@@ -226,9 +226,13 @@ function easy_xmlsitemap_build_node_items($base_url) {
   $output           = '';
   $excluded_types   = $config->get('excluded_types');
   $types            = array_values($excluded_types);
-  
+
   foreach (array_keys($types, 0, true) as $key) {
     unset($types[$key]);
+  }
+  // @todo - fix fake array
+  if (empty($types)) {
+    $types = array('nonexistent_type' => 'nonexistent_type');
   }
   
   $frontpage_nid = easy_xmlsitemap_get_frontpage_nid(); 
