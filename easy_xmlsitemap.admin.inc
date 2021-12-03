@@ -2,24 +2,27 @@
 /**
  * @file
  * Admin forms to manage module
- *
  */
 
 /**
- * 
  * Settings form for module.
- *
  */
 function easy_xmlsitemap_settings_form() {
-  $config = config('easy_xmlsitemap.settings');
+  $config          = config('easy_xmlsitemap.settings');
   $last_build_date = state_get('easy_xmlsitemap_last_build_date', 0);
   
   $info = $last_build_date != 0 
       ? t('Sitemap last build time: ') . format_date($last_build_date, 'short') 
       : t('Sitemap has not built yet.');
   
-  $site_langs = language_list(TRUE, TRUE);
-
+  $site_langs     = language_list(TRUE, TRUE);
+  $node_types     = node_type_get_types();
+  $excluded_types = array();
+  
+  foreach ($node_types as $key => $value) {
+    $excluded_types[$key] = $value->name;
+  }
+  
   $form = array();
   
   $form['build_info'] = array(
@@ -32,6 +35,7 @@ function easy_xmlsitemap_settings_form() {
   $form['build_info']['info'] = array(
     '#markup' => '<p>' . $info . '</p>',
   );
+  
   $form['build_info']['build'] = array(
     '#type' => 'submit',
     '#value' => t('Build sitemap now'),
@@ -39,6 +43,7 @@ function easy_xmlsitemap_settings_form() {
       'class' => array('button-primary'),
     ),
   );
+  
   $form['build_info']['actions']['info'] = array(
     '#markup' => '<div class="description">' . t('This will rebuild sitemap immediately.') . '</div>', 
   );
@@ -63,6 +68,7 @@ function easy_xmlsitemap_settings_form() {
     '#default_value' => $config->get('base_url'),
     '#description' => t('Optional replacement for base URL, should be used instead of actual domain for sitemap links, for example: http://example.com. In most cases can be left empty.'),
   );
+  
   $form['settings']['rebuild_frequency'] = array(
     '#type' => 'select',
     '#title' => t('Sitemap rebuild frequency'),
@@ -74,9 +80,23 @@ function easy_xmlsitemap_settings_form() {
     '#default_value' => $config->get('rebuild_frequency'),
     '#description' => t('Select time interval for sitemap rebuild.'),
   );
-  $form['settings']['excluded_urls'] = array(
+  
+  $form['settings']['exclusions'] = array(
+    '#markup' => '<b>' . t('Sitemap exclusions can be configured below.') . '</b>',
+  );
+  
+  $form['settings']['set_exclusions'] = array(
+    '#type' => 'vertical_tabs',
+  );
+  
+  $form['settings']['urls'] = array(
+    '#type' => 'fieldset',
+    '#title' => t('Excluded URLs'),
+    '#group' => 'set_exclusions', 
+  );
+  
+  $form['settings']['urls']['excluded_urls'] = array(
     '#type' =>  'textarea',
-    '#title' => t('Excluded URLs list:'),
     '#default_value' => $config->get('excluded_urls'),
     '#description' => t('If URL should be excluded from sitemap, place one URL per line without domain part, see an example below:') 
     . '<br />403.html'
@@ -85,25 +105,43 @@ function easy_xmlsitemap_settings_form() {
     . '<br />' . t('Multiple similar URLs can be selected by using asterisk wildcard (*), for example:')
     . '<br /><em>post-*</em>,'
     . '<br />' . t('so all URLs starting with post- (such as post-123 or post-about-cat.html) will be excluded from sitemap.'),
-    '#prefix' => '<b>' . t('Exclusions:') . '</b>'
-    
   );
+  
+  $form['settings']['types'] = array(
+    '#type' => 'fieldset',
+    '#title' => t('Excluded content types'),
+    '#group' => 'set_exclusions', 
+  );
+  
+  $form['settings']['types']['excluded_types'] = array(
+    '#type' => 'checkboxes',
+    '#options' => $excluded_types,
+    '#default_value' => $config->get('excluded_types'),
+    '#description' => t('Select what content types do not include to sitemap.'),
+  );
+
   if (count($site_langs) > 1) {
-    $form['settings']['excluded_langs'] = array(
+    $form['settings']['langs'] = array(
+      '#type' => 'fieldset',
+      '#title' => t('Excluded content languages'),
+      '#group' => 'set_exclusions', 
+    );
+    
+    $form['settings']['langs']['excluded_langs'] = array(
       '#type' =>  'checkboxes',
-      '#title' => t('Exclude from sitemap all pages for selected language:'),
       '#options' => $site_langs,
       '#default_value' => $config->get('excluded_langs'),
       '#description' => t('You might want do not include to sitemap links to pages for specific language.'), 
     );
   }
+  
   if (module_exists('seo_meta')) {
     $form['settings']['seo_meta_integration'] = array(
       '#type' => 'checkbox',
       '#title' => t('Exclude also pages with "noindex" value of meta tag "robots".'),
       '#default_value' => $config->get('seo_meta_integration'),
       '#description' => t('Your site have module "SEO Meta Tags" enabled, so "noindex" in "robots" can be used for excluding pages from sitemap.'),
-      '#prefix' => '<b>' . t('"SEO Meta Tags" module integration:') . '</b>',
+      '#prefix' => t('"SEO Meta Tags" module integration:'),
     );
   }
   
@@ -131,6 +169,9 @@ function easy_xmlsitemap_settings_form_submit($form, &$form_state) {
     $config->set('base_url',           trim($form_state['values']['base_url']));
     $config->set('rebuild_frequency',  $form_state['values']['rebuild_frequency']);
     $config->set('excluded_urls',      trim($form_state['values']['excluded_urls']));
+    if (isset($form_state['values']['excluded_types'])) {  
+      $config->set('excluded_types',   $form_state['values']['excluded_types']);
+    }
     if (isset($form_state['values']['excluded_langs'])) {  
       $config->set('excluded_langs',   $form_state['values']['excluded_langs']);
     }

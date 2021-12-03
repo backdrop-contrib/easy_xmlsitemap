@@ -219,17 +219,25 @@ function easy_xmlsitemap_build_front_url($base_url) {
  * @return string
  */
 function easy_xmlsitemap_build_node_items($base_url) {
+  $config           = config('easy_xmlsitemap.settings');
   $default_langcode = config_get('system.core', 'language_default');
-  $site_langs = easy_xmlsitemap_language_list();
-  $urls_block  = array();
-  $output = '';
+  $site_langs       = easy_xmlsitemap_language_list();
+  $urls_block       = array();
+  $output           = '';
+  $excluded_types   = $config->get('excluded_types');
+  $types            = array_values($excluded_types);
+  
+  foreach (array_keys($types, 0, true) as $key) {
+    unset($types[$key]);
+  }
   
   $frontpage_nid = easy_xmlsitemap_get_frontpage_nid(); 
   
   $result = db_select('node', 'n')
     ->addTag('node_access') 
     ->fields('n')
-    ->condition('status', 0, '>')
+    ->condition('n.type', $types, 'NOT IN')  
+    ->condition('n.status', 0, '>')
     ->execute()
     ->fetchAll();
   

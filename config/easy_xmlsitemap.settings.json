@@ -4,6 +4,7 @@
   "sitemap_dir": "easy_xmlsitemap",
   "rebuild_frequency": "daily",
   "excluded_urls": "",
+  "excluded_types": [],
   "excluded_langs": [],
   "force_https": 0,
   "seo_meta_integration": 0
